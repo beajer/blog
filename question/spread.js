@@ -9,6 +9,6 @@ var b = a
 a == b // true
 //指向同一个内存地址
 
-var c = {..a}
+var c = {...a}
 a == c // false
 //proxy?
