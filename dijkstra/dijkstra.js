@@ -89,13 +89,13 @@ class Dijkstra{
 		function travel(start, prev={}){
 			let currentWeight = (start.weight || 0) + (prev ? prev.weight : 0)
 			let recordWeight = cost[start.node].weigth || 0
-      if(processed.has(start.node) && currentWeight > recordWeight){
-      	return 
-      }else{
-      	processed.add(start.node)
-      }
-      _updateCost(start, prev)
-      cost[start.node] = currentWeight
+			if(processed.has(start.node) && currentWeight > recordWeight){
+				return 
+			}else{
+				processed.add(start.node)
+			}
+			_updateCost(start, prev)
+			cost[start.node] = currentWeight
 			if(Number.isFinite(shortestPath) && currentWeight > shortestPath) return
 			if(start.next.length == 0) return
 			start.next.forEach(row=>{
