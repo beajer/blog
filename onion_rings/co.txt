@@ -1,0 +1,43 @@
+generator f
+-----
+co(f)
+-----
+new Promise 
+f = f.apply(ctx, args)
+// generator -> iterator
+- prev = null, middlewares = [a, b, c]
+- while(i--){
+   prev = middlewares[i].call(null, prev)
+}
+- f.next() , ret = iterable a
+- next({value: a, done: false})
+  	- toPromise(a)
+  	- isGenerator(a) -> co(a)
+	------
+	co(a)
+	-----
+	- a.next(), ret = iterable b
+	- // o = '1'
+	- next({value: b, done: false})
+	  	- toPeomise(b)
+	    - isGenerator(b) -> co(b)
+		-----
+		co(b)
+		-----
+		- b.next(), ret = iterable c
+		// o += '2'
+		- next({value: c, done: false})
+		  	- toPromise(c)
+		    - isGenerator(c) -> co(c)
+			-----
+			co(c)
+			-----
+			  - c.next(), ret = {value: undefined, done: true}
+			  // o += '3'
+			  - next({value: undefined, done: true})
+			  - resolve(undefined)
+		  	- toPromise(c).then()
+		- b.next()
+    - toPromise(b).then()
+    - a.next()
+-toPromise(a).then()
