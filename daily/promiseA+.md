@@ -115,6 +115,17 @@ p2.catch(e => {
   }, () => {
     console.error('onrejected')
   })
+  //---
+  let p1 = new Promise(()=>{})
+  // let p1 = {then (){}}
+  let p2 = Promise.resolve().then(() => {
+    console.log('1')
+    return p1
+  }).then(d => {
+    console.log(d)
+  }, e => {
+    console.error(e)
+  })
   ```
 
   - 2.3.3 Otherwise, if x is an object or function
@@ -171,10 +182,10 @@ p2.catch(e => {
     ```
 
   - 2.3.4 If x is not an object or function, fulfill promise with x
-  ```js
-  let p1 = Promise.resolve().then(() => {
-    return 1
-  }).then(d => {
-    console.log(d)
-  })
-  ```
+    ```js
+    let p1 = Promise.resolve().then(() => {
+      return 1
+    }).then(d => {
+      console.log(d)
+    })
+    ```
