@@ -25,7 +25,7 @@ fx(state) = view
 fy(view) = state
 	       (dispatch)  (reducer)   (subscribe)
 	fy = view ---> action ---> state  ---> callback
-					 ^
-					 |
-			  action-creator
+			^
+			|
+		action-creator
 ```
