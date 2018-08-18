@@ -15,6 +15,8 @@ import compose from './compose'
  *
  * @param {...Function} middlewares The middleware chain to be applied.
  * @returns {Function} A store enhancer applying the middleware.
+ * 返回一个高阶函数， createStore => createStore => store,
+ * 通过这种方式返回新的store(.dispatch)，同时保留原始的store.dispatch作为middleware中的next参数
  */
 export default function applyMiddleware(...middlewares) {
   return createStore => (...args) => {
@@ -27,6 +29,7 @@ export default function applyMiddleware(...middlewares) {
       )
     }
 
+    // 只允许middleware使用store.getState 和 store.dispath
     const middlewareAPI = {
       getState: store.getState,
       /*
@@ -41,14 +44,14 @@ export default function applyMiddleware(...middlewares) {
     dispatch = compose(...chain)(store.dispatch)
     /* 
     * 让middlewareAPI保持的是对_dispatch函数的借用。
-    * 在初次构造时，禁止middleware使用dispatch，
-    * 构造完成后，调用链中最后一个 middleware 会接受真实的 store 的 dispatch 方法作为 next 参数，并借此结束调用链。
-    * 此时middlrewares从右至左，返回一个Dispatch函数,compose(a,b,c,d)(store.dispatch) = > a(b(c(d(store,dispatch))))
-    * 最终a接收的仍是dispatch函数， 并作为a的next参数，调用next(action)时， 即调用下一个middleware(b)
-    * 恢复_dispatch为组合后的high-order-dispatch，而middlrewareAPI.dispatch, store.dispatch都是调用_dispatch
-    * 这就是文档中提到的用了一个非常巧妙的方式，
-    * 以确保如果你在 middleware 中调用的是 store.dispatch(action) 而不是 next(action)，
-    * 那么这个操作会再次遍历包含当前 middleware 在内的整个 middleware 链。
+    * 在初次构造时，依次对每个middleware先行绑定store参数(middlewareAPI),但此时禁止middleware使用dispatch
+    * 构造完成后，此时middlrewares从右至左，compose(a,b,c,d)(store.dispatch) = > a(b(c(d(store.dispatch))))
+    * middlewareAPI.dispatch 变成整个 middleware 链的 dispatch 的函数
+    * 此时的每一个 middleware 都是 dispatch 高阶函数,接收 Dispatch 返回一个 新的 Dispatch 函数
+    * 调用链中最后一个 middleware 将会接受原始的 store.dispatch 方法作为 next 参数，并借此结束调用链。
+    * 每个middleware此时将能选择
+    *   1.调用 next(初始的基础的store.dispatch) ， 生产一个新的 Dispatch函数， 并串行调用下一个middleware
+    *   2.调用 middlewareApi.dispatch 或 store.dispath 重新遍历整个middleware链
     */
     return {
       ...store,
@@ -61,5 +64,6 @@ export default function applyMiddleware(...middlewares) {
 * type BaseDispatch = (a: Action) => Action
 * type Dispatch = (a: Action | AsyncAction) => any
 * type MiddlewareAPI = { dispatch: Dispatch, getState: () => State }
-* type Middleware = (api: MiddlewareAPI) => (next: Dispatch) => Dispatch
+* type Middleware = (api: MiddlewareAPI) => (next: BaseDispatch) => Action => State
+* type applyMiddleware = Array<Middleware> => createStore => createStore => store
 */

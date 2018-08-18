@@ -14,6 +14,14 @@ function getUndefinedStateErrorMessage(key, action) {
   )
 }
 
+/**
+ * @param {Object} inputState
+ * @param {Object} reducers
+ * @param {Object} action
+ * @param {Object} unexpectedKeyCache
+ * @returns {String} warningMessage
+ * 如果state的keys中含有reducers未出现的keys，将提示错误
+ */
 function getUnexpectedStateShapeWarningMessage(
   inputState,
   reducers,
@@ -62,6 +70,12 @@ function getUnexpectedStateShapeWarningMessage(
   }
 }
 
+/**
+ * @param {Array<reducer>} reducers 
+ * @returns {void}
+ * type reducer: (state, action) => state
+ * 检查当state == undefined 或action.type未被reducer捕获时，必须有默认值返回
+ */
 function assertReducerShape(reducers) {
   Object.keys(reducers).forEach(key => {
     const reducer = reducers[key]
@@ -104,7 +118,9 @@ function assertReducerShape(reducers) {
  * reducer function. It will call every child reducer, and gather their results
  * into a single state object, whose keys correspond to the keys of the passed
  * reducer functions.
- *
+ * 将一个值为不同reducer函数的对象，变成一个单一的reducer函数.
+ * 这个函数将会调用每一个子reducer，并将执行结果聚集成一个key与传递的reducer的key一致的单一的state对象，
+ * 
  * @param {Object} reducers An object whose values correspond to different
  * reducer functions that need to be combined into one. One handy way to obtain
  * it is to use ES6 `import * as reducers` syntax. The reducers may never return
@@ -161,7 +177,7 @@ export default function combineReducers(reducers) {
         warning(warningMessage)
       }
     }
-
+    // 为什么不直接返回nextStateForKey?
     let hasChanged = false
     const nextState = {}
     for (let i = 0; i < finalReducerKeys.length; i++) {

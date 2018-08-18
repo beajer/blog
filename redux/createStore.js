@@ -194,6 +194,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     try {
+      // 在dispatch a reducer过程中，不允许使用store.getState, store.subscribe, store.unsubscribe, store.dispatch
       isDispatching = true
       currentState = currentReducer(currentState, action)
     } finally {
