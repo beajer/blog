@@ -1,0 +1,1 @@
+对[redux](https://github.com/reduxjs/redux)个人理解

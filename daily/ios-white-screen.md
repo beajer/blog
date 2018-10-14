@@ -14,8 +14,12 @@ html, body {
   height: 100%;
   position: absolute;  
   overflow: scroll;
-  // 滑动顺畅一点..
+  // 滑动顺畅一点
   -webkit-overflow-scrolling: touch;
+}
+#app{
+  min-height：100%;
+  height: inherit;
 }
 ```
 html，body都是100%，#app撑起了父元素的告诉，但是浏览器默认的滚动scroll并不是#app，而是body,某些因素，造成返回history 后，无法复原（ios 的锅），为此，我们将#app 进行了绝对定位，并让它重新成为 scroll 的对象，从而解决问题.
