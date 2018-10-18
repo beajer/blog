@@ -17,6 +17,7 @@ const NOOP = () => {};
 // If a browser doesn't support the `options` argument to
 // add/removeEventListener, we need to check, otherwise we will
 // accidentally set `capture` with a truthy value.
+// 使用passive改善滚屏性能
 const PASSIVE = (() => {
   if (typeof window === 'undefined') return false;
   let hasSupport = false;
@@ -34,12 +35,14 @@ const PASSIVE = (() => {
 const UNSTABLE_MESSAGE = 'ReactList failed to reach a stable state.';
 const MAX_SYNC_UPDATES = 100;
 
+// 判断b是否是a的子集
 const isEqualSubset = (a, b) => {
   for (let key in b) if (a[key] !== b[key]) return false;
 
   return true;
 };
 
+// 寻找最近的设置overflow[axis]属性的父容器
 const defaultScrollParentGetter = (component) => {
   const {axis} = component.props;
   let el = component.getEl();
@@ -52,6 +55,10 @@ const defaultScrollParentGetter = (component) => {
   return window;
 };
 
+/**
+ * @param {*} component 
+ * 返回scrollParent的内部高度/内部宽度
+ */
 const defaultScrollParentViewportSizeGetter = (component) => {
   const {axis} = component.props;
   const {scrollParent} = component;
@@ -84,6 +91,7 @@ export default class ReactList extends Component {
 
   static defaultProps = {
     axis: 'y',
+    // 不支持元素的margin属性检测
     itemRenderer: (index, key) => <div key={key}>{index}</div>,
     itemsRenderer: (items, ref) => <div ref={ref} /*style={{padding: '20px'}*/>{items}</div>,
     length: 0,
@@ -104,7 +112,9 @@ export default class ReactList extends Component {
     const {from, size} = this.constrain(initialIndex, 0, itemsPerRow, props);
     // 仅当type === 'uniform'时,会计算itemsPerRow,其他情况默认为1
     // 仅当type === 'uniform'时,会设置itemSize
+    // from: 表示渲染第几个元素; size: 表示渲染多少个元素
     this.state = {from, size, itemsPerRow};
+
     // 仅在type === 'variable'时，缓存各个元素的offset
     this.cache = {};
     // this.scrollParent[SCROLL_START_KEYS[props.axis]]
@@ -119,6 +129,7 @@ export default class ReactList extends Component {
   componentWillReceiveProps(next) {
     // Viewport scroll is no longer useful if axis changes
     if (this.props.axis !== next.axis) this.clearSizeCache();
+    // 可能需要重新计算from, size
     let {from, size, itemsPerRow} = this.state;
     this.maybeSetState(this.constrain(from, size, itemsPerRow, next), NOOP);
   }
@@ -168,11 +179,12 @@ export default class ReactList extends Component {
 
   /**
    * @param {HTMLElement} el 
-   * @returns {Number} el.ContentBox距离包含该元素的定位元素或html元素/body元素 this.props.axis方向距离
+   * @returns {Number} el.PaddingBox距离document.body元素this.props.axis方向距离
    * @memberof ReactList
    */
   getOffset(el) {
     const {axis} = this.props;
+    // 用clientTop/left可能是因为items不支持margin属性，便于用transparent border模拟
     let offset = el[CLIENT_START_KEYS[axis]] || 0;
     const offsetKey = OFFSET_START_KEYS[axis];
     do offset += el[offsetKey] || 0; while (el = el.offsetParent);
@@ -206,11 +218,12 @@ export default class ReactList extends Component {
       // whichever has a value.
       document.body[scrollKey] || document.documentElement[scrollKey] :
       scrollParent[scrollKey];
-    // ContentBox最大可滚动距离，scrollHeight - clientHeight
+    // ContentBox最大可滚动距离，scrollParent.scrollHeight - scrollParent.clientHeight
     const max = this.getScrollSize() - this.props.scrollParentViewportSizeGetter(this);
+    // TO DO: 什么情况下actual会大于max?
     const scroll = Math.max(0, Math.min(actual, max));
     const el = this.getEl();
-    // 消除scrollParent非Content-Box区域宽高的影响
+    // 消除scrollParent非Padding-Box区域宽高的影响
     this.cachedScrollPosition = this.getOffset(scrollParent) + scroll - this.getOffset(el);
     return this.cachedScrollPosition;
   }
@@ -219,14 +232,13 @@ export default class ReactList extends Component {
    * @memberof ReactList
    * @param {Number} offset 
    * 消除this.el或this.items可能会有边框，内边距带来的影响，
-   * 设置父滚动容器的scroll[Top|Left]
+   * 设置父滚动容器的scroll[Top|Left],这个offset会加上this.el|this.items[borderTop | borderLeft]
    */
   setScroll(offset) {
     const {scrollParent} = this;
     const {axis} = this.props;
     offset += this.getOffset(this.getEl());
     if (scrollParent === window) return window.scrollTo(0, offset);
-
     offset -= this.getOffset(this.scrollParent);
     scrollParent[SCROLL_START_KEYS[axis]] = offset;
   }
@@ -234,7 +246,7 @@ export default class ReactList extends Component {
   /**
    * @memberof ReactList
    * @returns {Number}
-   * 滚动父容器的scrollSize
+   * 滚动父容器的scrollHeight/scrollWidth
    */
   getScrollSize() {
     const {scrollParent} = this;
@@ -316,11 +328,11 @@ export default class ReactList extends Component {
   }
 
   // Called by 'scroll' and 'resize' events, clears scroll position cache.
+  // cb是事件对象，在updateFrame里会被处理成NOOP
   updateFrameAndClearCache(cb) {
     this.clearSizeCache();
     return this.updateFrame(cb);
   }
-
   
   updateFrame(cb) {
     this.updateScrollParent();
@@ -332,7 +344,6 @@ export default class ReactList extends Component {
     }
   }
 
-  
   /**
    * @memberof ReactList
    * set this.scrollParent and update related eventlisteners
@@ -426,7 +437,8 @@ export default class ReactList extends Component {
    * @memberof ReactList
    * @param {Number} index 
    * @param {Object} cache 
-   * @returns {Number} 返回index之前元素的offset[Height|Width]之和
+   * @returns {Number} 
+   * 累加index之前元素的offset[Height|Width]
    */
   getSpaceBefore(index, cache = {}) {
     if (cache[index] != null) return cache[index];
@@ -456,9 +468,9 @@ export default class ReactList extends Component {
   /**
    * @memberof ReactList
    * @returns {void}
-   * 遍历this.items的子元素，缓存offsetHeight/offsetWidth到this.cache
-   * 通常，元素的offsetHeight是一种元素CSS高度的衡量标准，包括元素的边框、内边距和元素的水平滚动条（如果存在且渲染的话），
-   * 不包含:before或:after等伪类元素的高度。会被四舍五入为一个整数
+   * 针对type='variable';
+   * 遍历this.items的子元素，缓存每个元素的offsetHeight/offsetWidth；
+   * 存放在this.cache,
    */
   cacheSizes() {
     const {cache} = this;
@@ -474,9 +486,9 @@ export default class ReactList extends Component {
    * @memberof ReactList
    * @param {Number} index 
    * @returns { Number } index元素的size || undefined
-   * 若type === 'uniform'，尝试读取this.state.itemSize
+   * 若type === 'uniform',尝试读取this.state.itemSize
    * 若this.props.itemSizeGetter存在, 尝试执行
-   * 若this.cache中已存在，从this.cache中读取
+   * 若type === 'variable',且元素尺寸已缓存时，从this.cache中读取
    * 若type === 'simple',且index在items内，获取dom元素offsetSize
    * 若this.props.itemSizeEstimator存在， 尝试执行
    */
@@ -511,16 +523,22 @@ export default class ReactList extends Component {
    * @param {Number} itemsPerRow
    * @param {Object} {length, minSize, type} 来源于props
    * @returns {{from, size}} 需要渲染的元素from(index)及size
+   * 消除itemsPerRow, length, minSize, type的影响
    */
   constrain(from, size, itemsPerRow, {length, minSize, type}) {
+    // prop.minSize
     size = Math.max(size, minSize);
+    // size = Math.min(Math.ceil(size/itemsPerRow) * itemsPerRow, length)
     let mod = size % itemsPerRow;
     if (mod) size += itemsPerRow - mod;
     if (size > length) size = length;
+    // 因为type为'simple'时,不进行dom复用, from将一直为0
+    // 当剩余数据不足size时，from适当减小
     from =
       type === 'simple' || !from ? 0 :
       Math.max(Math.min(from, length - size), 0);
 
+    // 如果from不位于当行首位，则对from,size进行补全
     if (mod = from % itemsPerRow) {
       from -= mod;
       size += mod;
@@ -539,12 +557,10 @@ export default class ReactList extends Component {
     if (index != null) this.setScroll(this.getSpaceBefore(index));
   }
 
-
   /**
    * @param {Number} index
    * @returns
    * @memberof ReactList
-   * 若index为未显示过的元素索引，无反应
    */
   scrollAround(index) {
     const current = this.getScrollPosition();
@@ -556,6 +572,10 @@ export default class ReactList extends Component {
     if (current > max) return this.setScroll(max);
   }
 
+  /**
+   * 通过this.getStartAndEnd获取渲染的起止位置信息,
+   * 与item的位置信息比对，获取可视范围的元素索引
+   */
   getVisibleRange() {
     const {from, size} = this.state;
     const {start, end} = this.getStartAndEnd(0);
