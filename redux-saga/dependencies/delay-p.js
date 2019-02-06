@@ -1,10 +1,9 @@
 import { CANCEL } from './symbols'
 
-export default function delayP(ms) {
+export default function delayP(ms, val = true) {
   let timeoutId
   const promise = new Promise(resolve => {
-    // setTimeout(_ => resolve(true), ms)
-    timeoutId = setTimeout(resolve, ms, true)
+    timeoutId = setTimeout(resolve, ms, val)
   })
 
   promise[CANCEL] = () => {

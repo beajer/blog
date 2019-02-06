@@ -1,2 +1,4 @@
-export { SAGA_ACTION, TASK } from './dependencies/symbols'
-export { createMockTask, cloneableGenerator } from './internal/utils'
+let p = Promise.resolve()
+p.then(() => console.log(1))
+console.log(3)
+p.then(() => console.log(2))

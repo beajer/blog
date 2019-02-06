@@ -35,11 +35,20 @@ export function asap(task) {
   }
 }
 
+export function immediately(task) {
+  try {
+    suspend()
+    return task()
+  } finally {
+    flush()
+  }
+}
+
 /**
   Puts the scheduler in a `suspended` state. Scheduled tasks will be queued until the
   scheduler is released.
 **/
-export function suspend() {
+function suspend() {
   semaphore++
 }
 
@@ -53,7 +62,7 @@ function release() {
 /**
   Releases the current lock. Executes all queued tasks if the scheduler is in the released state.
 **/
-export function flush() {
+function flush() {
   release()
 
   let task
