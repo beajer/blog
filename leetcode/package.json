@@ -1,0 +1,26 @@
+{
+  "name": "sw",
+  "version": "1.0.0",
+  "description": "",
+  "main": "a.js",
+  "dependencies": {
+    "@types/jest": "^24.0.11",
+    "@types/through2": "^2.0.34",
+    "through2": "^3.0.1",
+    "ts-node": "^8.0.2",
+    "typescript": "^3.3.3333"
+  },
+  "devDependencies": {
+    "jest": "^24.3.1",
+    "ts-jest": "^24.0.0"
+  },
+  "scripts": {
+    "start": "ts-node app.ts",
+    "build": "tsc",
+    "test": "jest",
+    "record": "ts-node scripts/record.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
