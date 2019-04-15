@@ -1,16 +1,16 @@
 import PropTypes from 'prop-types';
-import React, {Component} from 'react';
+import React, { Component } from 'react';
 
-const CLIENT_SIZE_KEYS = {x: 'clientWidth', y: 'clientHeight'};
+const CLIENT_SIZE_KEYS = { x: 'clientWidth', y: 'clientHeight' };
 // const CLIENT_START_KEYS = {x: 'clientTop', y: 'clientLeft'}; 个人觉得有误
-const CLIENT_START_KEYS = {x: 'clientLeft', y: 'clientTop'};
-const INNER_SIZE_KEYS = {x: 'innerWidth', y: 'innerHeight'};
-const OFFSET_SIZE_KEYS = {x: 'offsetWidth', y: 'offsetHeight'};
-const OFFSET_START_KEYS = {x: 'offsetLeft', y: 'offsetTop'};
-const OVERFLOW_KEYS = {x: 'overflowX', y: 'overflowY'};
-const SCROLL_SIZE_KEYS = {x: 'scrollWidth', y: 'scrollHeight'};
-const SCROLL_START_KEYS = {x: 'scrollLeft', y: 'scrollTop'};
-const SIZE_KEYS = {x: 'width', y: 'height'};
+const CLIENT_START_KEYS = { x: 'clientLeft', y: 'clientTop' };
+const INNER_SIZE_KEYS = { x: 'innerWidth', y: 'innerHeight' };
+const OFFSET_SIZE_KEYS = { x: 'offsetWidth', y: 'offsetHeight' };
+const OFFSET_START_KEYS = { x: 'offsetLeft', y: 'offsetTop' };
+const OVERFLOW_KEYS = { x: 'overflowX', y: 'overflowY' };
+const SCROLL_SIZE_KEYS = { x: 'scrollWidth', y: 'scrollHeight' };
+const SCROLL_START_KEYS = { x: 'scrollLeft', y: 'scrollTop' };
+const SIZE_KEYS = { x: 'width', y: 'height' };
 
 const NOOP = () => {};
 
@@ -30,7 +30,9 @@ const PASSIVE = (() => {
     });
   } catch (e) {}
   return hasSupport;
-})() ? {passive: true} : false;
+})()
+  ? { passive: true }
+  : false;
 
 const UNSTABLE_MESSAGE = 'ReactList failed to reach a stable state.';
 const MAX_SYNC_UPDATES = 100;
@@ -43,28 +45,31 @@ const isEqualSubset = (a, b) => {
 };
 
 // 寻找最近的设置overflow[axis]属性的父容器
-const defaultScrollParentGetter = (component) => {
-  const {axis} = component.props;
+const defaultScrollParentGetter = component => {
+  const { axis } = component.props;
   let el = component.getEl();
   const overflowKey = OVERFLOW_KEYS[axis];
-  while (el = el.parentElement) {
+  while ((el = el.parentElement)) {
     switch (window.getComputedStyle(el)[overflowKey]) {
-    case 'auto': case 'scroll': case 'overlay': return el;
+      case 'auto':
+      case 'scroll':
+      case 'overlay':
+        return el;
     }
   }
   return window;
 };
 
 /**
- * @param {*} component 
+ * @param {*} component
  * 返回scrollParent的内部高度/内部宽度
  */
-const defaultScrollParentViewportSizeGetter = (component) => {
-  const {axis} = component.props;
-  const {scrollParent} = component;
-  return scrollParent === window ?
-    window[INNER_SIZE_KEYS[axis]] :
-    scrollParent[CLIENT_SIZE_KEYS[axis]];
+const defaultScrollParentViewportSizeGetter = component => {
+  const { axis } = component.props;
+  const { scrollParent } = component;
+  return scrollParent === window
+    ? window[INNER_SIZE_KEYS[axis]]
+    : scrollParent[CLIENT_SIZE_KEYS[axis]];
 };
 
 export default class ReactList extends Component {
@@ -93,7 +98,9 @@ export default class ReactList extends Component {
     axis: 'y',
     // 不支持元素的margin属性检测
     itemRenderer: (index, key) => <div key={key}>{index}</div>,
-    itemsRenderer: (items, ref) => <div ref={ref} /*style={{padding: '20px'}*/>{items}</div>,
+    itemsRenderer: (items, ref) => (
+      <div ref={ref} /*style={{padding: '20px'}*/>{items}</div>
+    ),
     length: 0,
     minSize: 1,
     pageSize: 10,
@@ -107,13 +114,13 @@ export default class ReactList extends Component {
 
   constructor(props) {
     super(props);
-    const {initialIndex} = props;
+    const { initialIndex } = props;
     const itemsPerRow = 1;
-    const {from, size} = this.constrain(initialIndex, 0, itemsPerRow, props);
+    const { from, size } = this.constrain(initialIndex, 0, itemsPerRow, props);
     // 仅当type === 'uniform'时,会计算itemsPerRow,其他情况默认为1
     // 仅当type === 'uniform'时,会设置itemSize
     // from: 表示渲染第几个元素; size: 表示渲染多少个元素
-    this.state = {from, size, itemsPerRow};
+    this.state = { from, size, itemsPerRow };
 
     // 仅在type === 'variable'时，缓存各个元素的offset
     this.cache = {};
@@ -130,7 +137,7 @@ export default class ReactList extends Component {
     // Viewport scroll is no longer useful if axis changes
     if (this.props.axis !== next.axis) this.clearSizeCache();
     // 可能需要重新计算from, size
-    let {from, size, itemsPerRow} = this.state;
+    let { from, size, itemsPerRow } = this.state;
     this.maybeSetState(this.constrain(from, size, itemsPerRow, next), NOOP);
   }
 
@@ -141,7 +148,6 @@ export default class ReactList extends Component {
   }
 
   componentDidUpdate() {
-
     // If the list has reached an unstable state, prevent an infinite loop.
     if (this.unstable) return;
 
@@ -173,29 +179,34 @@ export default class ReactList extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('resize', this.updateFrameAndClearCache);
-    this.scrollParent.removeEventListener('scroll', this.updateFrameAndClearCache, PASSIVE);
+    this.scrollParent.removeEventListener(
+      'scroll',
+      this.updateFrameAndClearCache,
+      PASSIVE
+    );
     this.scrollParent.removeEventListener('mousewheel', NOOP, PASSIVE);
   }
 
   /**
-   * @param {HTMLElement} el 
+   * @param {HTMLElement} el
    * @returns {Number} el.PaddingBox距离document.body元素this.props.axis方向距离
    * @memberof ReactList
    */
   getOffset(el) {
-    const {axis} = this.props;
+    const { axis } = this.props;
     // 用clientTop/left可能是因为items不支持margin属性，便于用transparent border模拟
     let offset = el[CLIENT_START_KEYS[axis]] || 0;
     const offsetKey = OFFSET_START_KEYS[axis];
-    do offset += el[offsetKey] || 0; while (el = el.offsetParent);
+    do offset += el[offsetKey] || 0;
+    while ((el = el.offsetParent));
     return offset;
   }
 
   /**
-   * @returns {HTMLElement} 
+   * @returns {HTMLElement}
    * @memberof ReactList
-   * items:包裹着当前显示的元素的容器   
-   * el:type不为'simple'时,需要容器撑开高度    
+   * items:包裹着当前显示的元素的容器
+   * el:type不为'simple'时,需要容器撑开高度
    * 当type === 'simple'时，返回this.items, 其他情况返回this.el
    */
   getEl() {
@@ -208,35 +219,39 @@ export default class ReactList extends Component {
    */
   getScrollPosition() {
     // Cache scroll position as this causes a forced synchronous layout.
-    if (typeof this.cachedScrollPosition === 'number') return this.cachedScrollPosition;
-    const {scrollParent} = this;
-    const {axis} = this.props;
+    if (typeof this.cachedScrollPosition === 'number')
+      return this.cachedScrollPosition;
+    const { scrollParent } = this;
+    const { axis } = this.props;
     const scrollKey = SCROLL_START_KEYS[axis];
-    const actual = scrollParent === window ?
-      // Firefox always returns document.body[scrollKey] as 0 and Chrome/Safari
-      // always return document.documentElement[scrollKey] as 0, so take
-      // whichever has a value.
-      document.body[scrollKey] || document.documentElement[scrollKey] :
-      scrollParent[scrollKey];
+    const actual =
+      scrollParent === window
+        ? // Firefox always returns document.body[scrollKey] as 0 and Chrome/Safari
+          // always return document.documentElement[scrollKey] as 0, so take
+          // whichever has a value.
+          document.body[scrollKey] || document.documentElement[scrollKey]
+        : scrollParent[scrollKey];
     // ContentBox最大可滚动距离，scrollParent.scrollHeight - scrollParent.clientHeight
-    const max = this.getScrollSize() - this.props.scrollParentViewportSizeGetter(this);
+    const max =
+      this.getScrollSize() - this.props.scrollParentViewportSizeGetter(this);
     // TO DO: 什么情况下actual会大于max?
     const scroll = Math.max(0, Math.min(actual, max));
     const el = this.getEl();
     // 消除scrollParent非Padding-Box区域宽高的影响
-    this.cachedScrollPosition = this.getOffset(scrollParent) + scroll - this.getOffset(el);
+    this.cachedScrollPosition =
+      this.getOffset(scrollParent) + scroll - this.getOffset(el);
     return this.cachedScrollPosition;
   }
 
   /**
    * @memberof ReactList
-   * @param {Number} offset 
+   * @param {Number} offset
    * 消除this.el或this.items可能会有边框，内边距带来的影响，
    * 设置父滚动容器的scroll[Top|Left],这个offset会加上this.el|this.items[borderTop | borderLeft]
    */
   setScroll(offset) {
-    const {scrollParent} = this;
-    const {axis} = this.props;
+    const { scrollParent } = this;
+    const { axis } = this.props;
     offset += this.getOffset(this.getEl());
     if (scrollParent === window) return window.scrollTo(0, offset);
     offset -= this.getOffset(this.scrollParent);
@@ -249,12 +264,12 @@ export default class ReactList extends Component {
    * 滚动父容器的scrollHeight/scrollWidth
    */
   getScrollSize() {
-    const {scrollParent} = this;
-    const {body, documentElement} = document;
+    const { scrollParent } = this;
+    const { body, documentElement } = document;
     const key = SCROLL_SIZE_KEYS[this.props.axis];
-    return scrollParent === window ?
-      Math.max(body[key], documentElement[key]) :
-      scrollParent[key];
+    return scrollParent === window
+      ? Math.max(body[key], documentElement[key])
+      : scrollParent[key];
   }
 
   /**
@@ -263,37 +278,37 @@ export default class ReactList extends Component {
    * itemSize是否预先确定
    */
   hasDeterminateSize() {
-    const {itemSizeGetter, type} = this.props;
+    const { itemSizeGetter, type } = this.props;
     return type === 'uniform' || itemSizeGetter;
   }
 
   /**
    * @memberof ReactList
-   * @param {Number} threshold 
+   * @param {Number} threshold
    * @returns {{start, end}}
    * 根据预设边界值和当前滚动位置信息，确定需要在scrollParent的Content-Box区域渲染的起止位置信息
    */
   getStartAndEnd(threshold = this.props.threshold) {
     const scroll = this.getScrollPosition();
     const start = Math.max(0, scroll - threshold);
-    let end = scroll + this.props.scrollParentViewportSizeGetter(this) + threshold;
+    let end =
+      scroll + this.props.scrollParentViewportSizeGetter(this) + threshold;
     if (this.hasDeterminateSize()) {
       end = Math.min(end, this.getSpaceBefore(this.props.length));
     }
-    return {start, end};
+    return { start, end };
   }
 
-  
   /**
    * @memberof ReactList
    * 仅type === 'uniform'时使用
    * @returns {{itemSize, itemsPerRow}}
    */
   getItemSizeAndItemsPerRow() {
-    const {axis, useStaticSize} = this.props;
-    let {itemSize, itemsPerRow} = this.state;
+    const { axis, useStaticSize } = this.props;
+    let { itemSize, itemsPerRow } = this.state;
     if (useStaticSize && itemSize && itemsPerRow) {
-      return {itemSize, itemsPerRow};
+      return { itemSize, itemsPerRow };
     }
 
     const itemEls = this.items.children;
@@ -318,9 +333,10 @@ export default class ReactList extends Component {
       let item = itemEls[itemsPerRow];
       item && item[startKey] === firstStart;
       item = itemEls[itemsPerRow]
-    ) ++itemsPerRow;
+    )
+      ++itemsPerRow;
 
-    return {itemSize, itemsPerRow};
+    return { itemSize, itemsPerRow };
   }
 
   clearSizeCache() {
@@ -333,14 +349,17 @@ export default class ReactList extends Component {
     this.clearSizeCache();
     return this.updateFrame(cb);
   }
-  
+
   updateFrame(cb) {
     this.updateScrollParent();
     if (typeof cb != 'function') cb = NOOP;
     switch (this.props.type) {
-    case 'simple': return this.updateSimpleFrame(cb);
-    case 'variable': return this.updateVariableFrame(cb);
-    case 'uniform': return this.updateUniformFrame(cb);
+      case 'simple':
+        return this.updateSimpleFrame(cb);
+      case 'variable':
+        return this.updateVariableFrame(cb);
+      case 'uniform':
+        return this.updateUniformFrame(cb);
     }
   }
 
@@ -358,37 +377,43 @@ export default class ReactList extends Component {
     }
     // If we have a new parent, cached parent dimensions are no longer useful.
     this.clearSizeCache();
-    this.scrollParent.addEventListener('scroll', this.updateFrameAndClearCache, PASSIVE);
+    this.scrollParent.addEventListener(
+      'scroll',
+      this.updateFrameAndClearCache,
+      PASSIVE
+    );
     // You have to attach mousewheel listener to the scrollable element.
     // Just an empty listener. After that onscroll events will be fired synchronously.
     this.scrollParent.addEventListener('mousewheel', NOOP, PASSIVE);
   }
 
   updateSimpleFrame(cb) {
-    const {end} = this.getStartAndEnd();
+    const { end } = this.getStartAndEnd();
     const itemEls = this.items.children;
     let elEnd = 0;
 
     if (itemEls.length) {
-      const {axis} = this.props;
+      const { axis } = this.props;
       const firstItemEl = itemEls[0];
       const lastItemEl = itemEls[itemEls.length - 1];
-      elEnd = this.getOffset(lastItemEl) + lastItemEl[OFFSET_SIZE_KEYS[axis]] -
+      elEnd =
+        this.getOffset(lastItemEl) +
+        lastItemEl[OFFSET_SIZE_KEYS[axis]] -
         this.getOffset(firstItemEl);
     }
 
     if (elEnd > end) return cb();
 
-    const {pageSize, length} = this.props;
+    const { pageSize, length } = this.props;
     const size = Math.min(this.state.size + pageSize, length);
-    this.maybeSetState({size}, cb);
+    this.maybeSetState({ size }, cb);
   }
 
   updateVariableFrame(cb) {
     if (!this.props.itemSizeGetter) this.cacheSizes();
 
-    const {start, end} = this.getStartAndEnd();
-    const {length, pageSize} = this.props;
+    const { start, end } = this.getStartAndEnd();
+    const { length, pageSize } = this.props;
     let space = 0;
     let from = 0;
     let size = 0;
@@ -413,40 +438,40 @@ export default class ReactList extends Component {
       ++size;
     }
 
-    this.maybeSetState({from, size}, cb);
+    this.maybeSetState({ from, size }, cb);
   }
 
   updateUniformFrame(cb) {
-    let {itemSize, itemsPerRow} = this.getItemSizeAndItemsPerRow();
+    let { itemSize, itemsPerRow } = this.getItemSizeAndItemsPerRow();
 
     if (!itemSize || !itemsPerRow) return cb();
 
-    const {start, end} = this.getStartAndEnd();
+    const { start, end } = this.getStartAndEnd();
 
-    const {from, size} = this.constrain(
+    const { from, size } = this.constrain(
       Math.floor(start / itemSize) * itemsPerRow,
       (Math.ceil((end - start) / itemSize) + 1) * itemsPerRow,
       itemsPerRow,
       this.props
     );
 
-    return this.maybeSetState({itemsPerRow, from, itemSize, size}, cb);
+    return this.maybeSetState({ itemsPerRow, from, itemSize, size }, cb);
   }
 
   /**
    * @memberof ReactList
-   * @param {Number} index 
-   * @param {Object} cache 
-   * @returns {Number} 
+   * @param {Number} index
+   * @param {Object} cache
+   * @returns {Number}
    * 累加index之前元素的offset[Height|Width]
    */
   getSpaceBefore(index, cache = {}) {
     if (cache[index] != null) return cache[index];
 
     // Try the static itemSize.
-    const {itemSize, itemsPerRow} = this.state;
+    const { itemSize, itemsPerRow } = this.state;
     if (itemSize) {
-      return cache[index] = Math.floor(index / itemsPerRow) * itemSize;
+      return (cache[index] = Math.floor(index / itemsPerRow) * itemSize);
     }
 
     // Find the closest space to index there is a cached value for.
@@ -462,7 +487,7 @@ export default class ReactList extends Component {
       space += itemSize;
     }
 
-    return cache[index] = space;
+    return (cache[index] = space);
   }
 
   /**
@@ -473,8 +498,8 @@ export default class ReactList extends Component {
    * 存放在this.cache,
    */
   cacheSizes() {
-    const {cache} = this;
-    const {from} = this.state;
+    const { cache } = this;
+    const { from } = this.state;
     const itemEls = this.items.children;
     const sizeKey = OFFSET_SIZE_KEYS[this.props.axis];
     for (let i = 0, l = itemEls.length; i < l; ++i) {
@@ -484,7 +509,7 @@ export default class ReactList extends Component {
 
   /**
    * @memberof ReactList
-   * @param {Number} index 
+   * @param {Number} index
    * @returns { Number } index元素的size || undefined
    * 若type === 'uniform',尝试读取this.state.itemSize
    * 若this.props.itemSizeGetter存在, 尝试执行
@@ -493,9 +518,9 @@ export default class ReactList extends Component {
    * 若this.props.itemSizeEstimator存在， 尝试执行
    */
   getSizeOfItem(index) {
-    const {cache, items} = this;
-    const {axis, itemSizeGetter, itemSizeEstimator, type} = this.props;
-    const {from, itemSize, size} = this.state;
+    const { cache, items } = this;
+    const { axis, itemSizeGetter, itemSizeEstimator, type } = this.props;
+    const { from, itemSize, size } = this.state;
 
     // Try the static itemSize.
     if (itemSize) return itemSize;
@@ -525,7 +550,7 @@ export default class ReactList extends Component {
    * @returns {{from, size}} 需要渲染的元素from(index)及size
    * 消除itemsPerRow, length, minSize, type的影响
    */
-  constrain(from, size, itemsPerRow, {length, minSize, type}) {
+  constrain(from, size, itemsPerRow, { length, minSize, type }) {
     // prop.minSize
     size = Math.max(size, minSize);
     // size = Math.min(Math.ceil(size/itemsPerRow) * itemsPerRow, length)
@@ -535,19 +560,19 @@ export default class ReactList extends Component {
     // 因为type为'simple'时,不进行dom复用, from将一直为0
     // 当剩余数据不足size时，from适当减小
     from =
-      type === 'simple' || !from ? 0 :
-      Math.max(Math.min(from, length - size), 0);
+      type === 'simple' || !from
+        ? 0
+        : Math.max(Math.min(from, length - size), 0);
 
     // 如果from不位于当行首位，则对from,size进行补全
-    if (mod = from % itemsPerRow) {
+    if ((mod = from % itemsPerRow)) {
       from -= mod;
       size += mod;
     }
 
-    return {from, size};
+    return { from, size };
   }
 
-  
   /**
    * @param {Number} index
    * @memberof ReactList
@@ -565,7 +590,10 @@ export default class ReactList extends Component {
   scrollAround(index) {
     const current = this.getScrollPosition();
     const bottom = this.getSpaceBefore(index);
-    const top = bottom - this.props.scrollParentViewportSizeGetter(this) + this.getSizeOfItem(index);
+    const top =
+      bottom -
+      this.props.scrollParentViewportSizeGetter(this) +
+      this.getSizeOfItem(index);
     const min = Math.min(top, bottom);
     const max = Math.max(top, bottom);
     if (current <= min) return this.setScroll(min);
@@ -577,8 +605,8 @@ export default class ReactList extends Component {
    * 与item的位置信息比对，获取可视范围的元素索引
    */
   getVisibleRange() {
-    const {from, size} = this.state;
-    const {start, end} = this.getStartAndEnd(0);
+    const { from, size } = this.state;
+    const { start, end } = this.getStartAndEnd(0);
     const cache = {};
     let first, last;
     for (let i = from; i < from + size; ++i) {
@@ -591,21 +619,21 @@ export default class ReactList extends Component {
   }
 
   renderItems() {
-    const {itemRenderer, itemsRenderer} = this.props;
-    const {from, size} = this.state;
+    const { itemRenderer, itemsRenderer } = this.props;
+    const { from, size } = this.state;
     const items = [];
     for (let i = 0; i < size; ++i) items.push(itemRenderer(from + i, i));
-    return itemsRenderer(items, c => this.items = c);
+    return itemsRenderer(items, c => (this.items = c));
   }
 
   render() {
-    const {axis, length, type, useTranslate3d} = this.props;
-    const {from, itemsPerRow} = this.state;
+    const { axis, length, type, useTranslate3d } = this.props;
+    const { from, itemsPerRow } = this.state;
 
     const items = this.renderItems();
     if (type === 'simple') return items;
 
-    const style = {position: 'relative'};
+    const style = { position: 'relative' };
     const cache = {};
     const bottom = Math.ceil(length / itemsPerRow) * itemsPerRow;
     // 作用于this.el上,撑开真实高度
@@ -619,19 +647,18 @@ export default class ReactList extends Component {
     const offset = this.getSpaceBefore(from, cache);
     const x = axis === 'x' ? offset : 0;
     const y = axis === 'y' ? offset : 0;
-    const transform =
-      useTranslate3d ?
-      `translate3d(${x}px, ${y}px, 0)` :
-      `translate(${x}px, ${y}px)`;
+    const transform = useTranslate3d
+      ? `translate3d(${x}px, ${y}px, 0)`
+      : `translate(${x}px, ${y}px)`;
     const listStyle = {
       msTransform: transform,
       WebkitTransform: transform,
       transform
     };
     return (
-      <div style={style} ref={c => this.el = c}>
+      <div style={style} ref={c => (this.el = c)}>
         <div style={listStyle}>{items}</div>
       </div>
     );
   }
-};
+}
