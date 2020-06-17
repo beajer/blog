@@ -59,10 +59,10 @@ class MyPromise {
           this._doResolve(then.bind(newValue));
           return;
         }
-        this._state = 1;
-        this._value = newValue;
-        this._finale();
       }
+      this._state = 1;
+      this._value = newValue;
+      this._finale();
     } catch (e) {
       this._reject(e);
     }
